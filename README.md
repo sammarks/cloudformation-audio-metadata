@@ -5,12 +5,11 @@
 [![Dev Dependencies](https://david-dm.org/sammarks/cloudformation-audio-metadata/dev-status.svg)](https://david-dm.org/sammarks/cloudformation-audio-metadata?type=dev)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg)](https://paypal.me/sammarks15)
 
-`cloudformation-audio-metadata` is an AWS SAM + CloudFormation template designed to ingest videos
-from an input S3 bucket, generate thumbnails for them at predetermined points (or "marks") at the
-original resolution of the video, upload them back to a destination S3 bucket, and send an SNS
-notification with the details of the process.
+`cloudformation-audio-metadata` is an AWS SAM + CloudFormation template designed to ingest audio
+files from an input S3 bucket and grab metadata information (currently just duration) from them.
+It sends this result through an SNS topic for consumption by another Lambda function, email, etc.
 
-It also utilizes [serverlesspub's ffmpeg-aws-lambda-layer package](https://github.com/serverlesspub/ffmpeg-aws-lambda-layer) for easily packaging ffmpeg with the Lambda function.
+It utilizes [serverlesspub's ffmpeg-aws-lambda-layer package](https://github.com/serverlesspub/ffmpeg-aws-lambda-layer) for easily packaging ffmpeg with the Lambda function.
 
 ## Get Started
 
