@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Generates metadata for audio files uploaded to a S3 bucket.'
+Resources:
+  InputBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref InputBucketName
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Topic: !Ref BucketCreatedTopic
+    DependsOn: ['BucketCreatedTopicPolicy']
+  Topic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  BucketCreatedTopic:
+    Type: 'AWS::SNS::Topic'
+    Properties: {}
+  BucketCreatedTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref BucketCreatedTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: ['SNS:Publish']
+            Resource: '*'
+            Condition:
+              ArnLike:
+                'aws:SourceArn': !Join ['', ['arn:aws:s3:::', !Ref InputBucketName]]
+  FfmpegLambdaLayer:
+    Type: 'AWS::Serverless::Application'
+    Properties:
+      Location:
+        ApplicationId: >-
+          arn:aws:serverlessrepo:us-east-1:145266761615:applications/ffmpeg-lambda-layer
+        SemanticVersion: 1.0.0
+  MetadataFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: generateMetadata.handler
+      Runtime: nodejs12.x
+      CodeUri: src
+      MemorySize: 512
+      Timeout: 60
+      Policies:
+        - AWSLambdaExecute
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt Topic.TopicName
+      Environment:
+        Variables:
+          SNS_TOPIC: !Ref Topic
+          DEBUG: !Ref DebugLevel
+      Layers:
+        - !GetAtt FfmpegLambdaLayer.Outputs.LayerVersion
+      Events:
+        SNS:
+          Type: SNS
+          Properties:
+            Topic: !Ref BucketCreatedTopic
+Parameters:
+  DebugLevel:
+    Type: String
+    Default: "cloudformation-audio-metadata"
+    Description: "The DEBUG environment variable for the Lambda. Set to 'cloudformation-audio-metadata' to enable debug."
+  InputBucketName:
+    Type: String
+    Description: "The name of the audio input bucket."
+Outputs:
+  InputBucket:
+    Description: S3 Input Bucket
+    Value: !Ref InputBucket
+  InputBucketArn:
+    Description: S3 Input Bucket ARN
+    Value: !GetAtt InputBucket.Arn
+  Topic:
+    Description: SNS Notification Topic
+    Value: !Ref Topic
+  S3Topic:
+    Description: S3 Object Created SNS Topic
+    Value: !Ref BucketCreatedTopic
