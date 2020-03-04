@@ -1,6 +1,6 @@
 {
   "name": "cloudformation-audio-metadata",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Generates metadata for audio files uploaded to a S3 bucket.",
   "main": "index.js",
   "repository": "https://github.com/sammarks/cloudformation-audio-metadata",
